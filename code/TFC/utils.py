@@ -1,14 +1,17 @@
 """The utils are modified based on TS-TCC paper. -- Xiang Zhang, Jan 16, 2023"""
 
-import torch
+import logging
+import os
 import random
+import sys
+from shutil import copy
+
 import numpy as np
 import pandas as pd
-import os
-import sys
-import logging
-from sklearn.metrics import classification_report, cohen_kappa_score, confusion_matrix, accuracy_score
-from shutil import copy
+import torch
+from sklearn.metrics import (accuracy_score, classification_report,
+                             cohen_kappa_score, confusion_matrix)
+
 
 def set_requires_grad(model, dict_, requires_grad=True):
     for param in model.named_parameters():
@@ -76,10 +79,11 @@ def _logger(logger_name, level=logging.DEBUG):
     console_handler.setFormatter(log_format)
     logger.addHandler(console_handler)
     # Creating and adding the file handler
-    file_handler = logging.FileHandler(logger_name, mode='a')
+    file_handler = logging.FileHandler(logger_name, mode="a")
     file_handler.setFormatter(log_format)
     logger.addHandler(file_handler)
     return logger
+
 
 def copy_Files(destination, data_type):
     # destination: 'experiments_logs/Exp1/run1'
@@ -87,8 +91,13 @@ def copy_Files(destination, data_type):
     os.makedirs(destination_dir, exist_ok=True)
     copy("main.py", os.path.join(destination_dir, "main.py"))
     copy("trainerfun/trainer.py", os.path.join(destination_dir, "trainerfun.py"))
-    copy(f"config_files/{data_type}_Configs.py", os.path.join(destination_dir, f"{data_type}_Configs.py"))
-    copy("dataloader/augmentations.py", os.path.join(destination_dir, "augmentations.py"))
+    copy(
+        f"config_files/{data_type}_Configs.py",
+        os.path.join(destination_dir, f"{data_type}_Configs.py"),
+    )
+    copy(
+        "dataloader/augmentations.py", os.path.join(destination_dir, "augmentations.py")
+    )
     copy("dataloader/dataloader.py", os.path.join(destination_dir, "dataloader.py"))
     copy(f"models/model.py", os.path.join(destination_dir, f"model.py"))
     copy("models/loss.py", os.path.join(destination_dir, "loss.py"))

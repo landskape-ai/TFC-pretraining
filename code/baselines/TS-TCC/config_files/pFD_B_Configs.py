@@ -1,27 +1,25 @@
-
 class Config(object):
     def __init__(self):
         # model configs
         self.input_channels = 1
-        self.kernel_size = 32 #25 #32
-        self.stride = 4 #3 4
+        self.kernel_size = 32  # 25 #32
+        self.stride = 4  # 3 4
         self.final_out_channels = 128
-        self.features_len = 162 #10 162
+        self.features_len = 162  # 10 162
 
         self.num_classes = 3
         self.dropout = 0.35
-        self.window_len = 5120 #5120
+        self.window_len = 5120  # 5120
 
         # for noisy labels experiment
         self.corruption_prob = 0.3
-
 
         # training configs
         self.num_epoch = 40
         self.batch_size = 16
 
         # optimizer parameters
-        self.optimizer = 'adam'
+        self.optimizer = "adam"
         self.beta1 = 0.9
         self.beta2 = 0.99
         self.lr = 3e-4
@@ -32,6 +30,7 @@ class Config(object):
         self.Context_Cont = Context_Cont_configs()
         self.TC = TC()
         self.augmentation = augmentations()
+
 
 class augmentations(object):
     def __init__(self):
@@ -44,6 +43,7 @@ class Context_Cont_configs(object):
     def __init__(self):
         self.temperature = 0.2
         self.use_cosine_similarity = True
+
 
 class TC(object):
     def __init__(self):

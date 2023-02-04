@@ -1,4 +1,3 @@
-
 class Config(object):
     def __init__(self):
         # model configs
@@ -9,7 +8,6 @@ class Config(object):
         self.num_classes_target = 2
         self.dropout = 0.35
 
-
         self.kernel_size = 25
         self.stride = 3
         self.features_len = 127
@@ -17,28 +15,30 @@ class Config(object):
 
         self.TSlength_aligned = 178
 
-        self.CNNoutput_channel = 10 # 90 # 10 for Epilepsy model
+        self.CNNoutput_channel = 10  # 90 # 10 for Epilepsy model
 
         # training configs
         self.num_epoch = 40
 
-
         # optimizer parameters
-        self.optimizer = 'adam'
+        self.optimizer = "adam"
         self.beta1 = 0.9
         self.beta2 = 0.99
-        self.lr = 3e-4 # 3e-4
+        self.lr = 3e-4  # 3e-4
         self.lr_f = self.lr
 
         # data parameters
         self.drop_last = True
         self.batch_size = 128
         """For Epilepsy, the target batchsize is 60"""
-        self.target_batch_size = 60   # the size of target dataset (the # of samples used to fine-tune).
+        self.target_batch_size = (
+            60  # the size of target dataset (the # of samples used to fine-tune).
+        )
 
         self.Context_Cont = Context_Cont_configs()
         self.TC = TC()
         self.augmentation = augmentations()
+
 
 class augmentations(object):
     def __init__(self):

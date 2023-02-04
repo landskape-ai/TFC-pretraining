@@ -1,4 +1,3 @@
-
 class Config(object):
     def __init__(self):
         # model configs
@@ -9,15 +8,14 @@ class Config(object):
 
         self.kernel_size = 25
         self.stride = 3
-        self.features_len = 10 # This only works for the current transfer learning into epilepsy dataset!
+        self.features_len = 10  # This only works for the current transfer learning into epilepsy dataset!
         self.window_len = 178
 
         # training configs
         self.num_epoch = 3
 
-
         # optimizer parameters
-        self.optimizer = 'adam'
+        self.optimizer = "adam"
         self.beta1 = 0.9
         self.beta2 = 0.99
         self.lr = 3e-7
@@ -29,6 +27,7 @@ class Config(object):
         self.Context_Cont = Context_Cont_configs()
         self.TC = TC()
         self.augmentation = augmentations()
+
 
 class augmentations(object):
     def __init__(self):

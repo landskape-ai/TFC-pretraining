@@ -1,4 +1,3 @@
-
 class Config(object):
     def __init__(self):
         # model configs
@@ -14,15 +13,12 @@ class Config(object):
         # for noisy labels experiment
         self.corruption_prob = 0.3
 
-
-
-
         # training configs
-        self.num_epoch =  40
+        self.num_epoch = 40
         self.batch_size = 64
 
         # optimizer parameters
-        self.optimizer = 'adam'
+        self.optimizer = "adam"
         self.beta1 = 0.9
         self.beta2 = 0.99
         self.lr = 3e-4
@@ -44,6 +40,7 @@ class Config(object):
         self.features_len_f = self.features_len
         self.CNNoutput_channel = 162
 
+
 class augmentations(object):
     def __init__(self):
         self.jitter_scale_ratio = 2
@@ -55,6 +52,7 @@ class Context_Cont_configs(object):
     def __init__(self):
         self.temperature = 0.2
         self.use_cosine_similarity = True
+
 
 class TC(object):
     def __init__(self):

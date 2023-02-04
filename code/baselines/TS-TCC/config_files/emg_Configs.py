@@ -2,19 +2,18 @@ class Config(object):
     def __init__(self):
         # model configs
         self.input_channels = 1
-        self.kernel_size = 8 #8, 25
-        self.stride = 1 #1, 3
-        self.final_out_channels = 128 
+        self.kernel_size = 8  # 8, 25
+        self.stride = 1  # 1, 3
+        self.final_out_channels = 128
 
         self.num_classes = 3
         self.dropout = 0.35
-        self.features_len = 190 #190, 10
-        self.window_len = 1500 #1500, 178
+        self.features_len = 190  # 190, 10
+        self.window_len = 1500  # 1500, 178
 
         # training configs
         self.num_epoch = 2
 
-        
         # optimizer parameters
         self.beta1 = 0.9
         self.beta2 = 0.99
@@ -22,7 +21,7 @@ class Config(object):
 
         # data parameters
         self.drop_last = True
-        self.batch_size = 16# small dataset
+        self.batch_size = 16  # small dataset
 
         self.Context_Cont = Context_Cont_configs()
         self.TC = TC()

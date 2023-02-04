@@ -1,4 +1,3 @@
-
 class Config(object):
     def __init__(self):
         # model configs
@@ -15,13 +14,12 @@ class Config(object):
         # for noisy labels experiment
         self.corruption_prob = 0.3
 
-
         # training configs
-        self.num_epoch = 40 # 3 for tssd
-        self.batch_size = 64 # 4 for tssd
+        self.num_epoch = 40  # 3 for tssd
+        self.batch_size = 64  # 4 for tssd
 
         # optimizer parameters
-        self.optimizer = 'adam'
+        self.optimizer = "adam"
         self.beta1 = 0.9
         self.beta2 = 0.99
         self.lr = 3e-4
@@ -32,6 +30,7 @@ class Config(object):
         self.Context_Cont = Context_Cont_configs()
         self.TC = TC()
         self.augmentation = augmentations()
+
 
 class augmentations(object):
     def __init__(self):
@@ -44,6 +43,7 @@ class Context_Cont_configs(object):
     def __init__(self):
         self.temperature = 0.2
         self.use_cosine_similarity = True
+
 
 class TC(object):
     def __init__(self):

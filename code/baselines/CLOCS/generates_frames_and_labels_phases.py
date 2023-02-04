@@ -18,10 +18,11 @@ import os
 import pickle
 import random
 from operator import itemgetter
+
 import numpy as np
+from sklearn.decomposition import PCA
 from tqdm import tqdm
 
-from sklearn.decomposition import PCA
 #%%
 
 basepath = 'data'

@@ -1,6 +1,7 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
-import numpy as np
+
 
 class NTXentLoss(torch.nn.Module):
     def __init__(self, device, batch_size, temperature, use_cosine_similarity):
@@ -53,7 +54,9 @@ class NTXentLoss(torch.nn.Module):
         r_pos = torch.diag(similarity_matrix, -self.batch_size)
         positives = torch.cat([l_pos, r_pos]).view(2 * self.batch_size, 1)
 
-        negatives = similarity_matrix[self.mask_samples_from_same_repr].view(2 * self.batch_size, -1)
+        negatives = similarity_matrix[self.mask_samples_from_same_repr].view(
+            2 * self.batch_size, -1
+        )
 
         logits = torch.cat((positives, negatives), dim=1)
         logits /= self.temperature
@@ -64,8 +67,8 @@ class NTXentLoss(torch.nn.Module):
 
         return loss / (2 * self.batch_size)
 
-class NTXentLoss_poly(torch.nn.Module):
 
+class NTXentLoss_poly(torch.nn.Module):
     def __init__(self, device, batch_size, temperature, use_cosine_similarity):
         super(NTXentLoss_poly, self).__init__()
         self.batch_size = batch_size
@@ -116,7 +119,9 @@ class NTXentLoss_poly(torch.nn.Module):
         r_pos = torch.diag(similarity_matrix, -self.batch_size)
         positives = torch.cat([l_pos, r_pos]).view(2 * self.batch_size, 1)
 
-        negatives = similarity_matrix[self.mask_samples_from_same_repr].view(2 * self.batch_size, -1)
+        negatives = similarity_matrix[self.mask_samples_from_same_repr].view(
+            2 * self.batch_size, -1
+        )
 
         logits = torch.cat((positives, negatives), dim=1)
         logits /= self.temperature
@@ -125,22 +130,29 @@ class NTXentLoss_poly(torch.nn.Module):
         labels = torch.zeros(2 * self.batch_size).to(self.device).long()
         CE = self.criterion(logits, labels)
 
-        onehot_label = torch.cat((torch.ones(2 * self.batch_size, 1),torch.zeros(2 * self.batch_size, negatives.shape[-1])),dim=-1).to(self.device).long()
+        onehot_label = (
+            torch.cat(
+                (
+                    torch.ones(2 * self.batch_size, 1),
+                    torch.zeros(2 * self.batch_size, negatives.shape[-1]),
+                ),
+                dim=-1,
+            )
+            .to(self.device)
+            .long()
+        )
         # Add poly loss
-        pt = torch.mean(onehot_label* torch.nn.functional.softmax(logits,dim=-1))
+        pt = torch.mean(onehot_label * torch.nn.functional.softmax(logits, dim=-1))
 
         epsilon = self.batch_size
         # loss = CE/ (2 * self.batch_size) + epsilon*(1-pt) # replace 1 by 1/self.batch_size
-        loss = CE / (2 * self.batch_size) + epsilon * (1/self.batch_size - pt)
+        loss = CE / (2 * self.batch_size) + epsilon * (1 / self.batch_size - pt)
         # loss = CE / (2 * self.batch_size)
 
         return loss
 
 
-
-
 class hierarchical_contrastive_loss(torch.nn.Module):
-
     def __init__(self, device):
         super(hierarchical_contrastive_loss, self).__init__()
         self.device = device
@@ -148,7 +160,7 @@ class hierarchical_contrastive_loss(torch.nn.Module):
     def instance_contrastive_loss(self, z1, z2):
         B, T = z1.size(0), z1.size(1)
         if B == 1:
-            return z1.new_tensor(0.)
+            return z1.new_tensor(0.0)
         z = torch.cat([z1, z2], dim=0)  # 2B x T x C
         z = z.transpose(0, 1)  # T x 2B x C
         sim = torch.matmul(z, z.transpose(1, 2))  # T x 2B x 2B
@@ -160,11 +172,10 @@ class hierarchical_contrastive_loss(torch.nn.Module):
         loss = (logits[:, i, B + i - 1].mean() + logits[:, B + i, i].mean()) / 2
         return loss
 
-
     def temporal_contrastive_loss(self, z1, z2):
         B, T = z1.size(0), z1.size(1)
         if T == 1:
-            return z1.new_tensor(0.)
+            return z1.new_tensor(0.0)
         z = torch.cat([z1, z2], dim=1)  # B x 2T x C
         sim = torch.matmul(z, z.transpose(1, 2))  # B x 2T x 2T
         logits = torch.tril(sim, diagonal=-1)[:, :, :-1]  # B x 2T x (2T-1)
@@ -174,8 +185,9 @@ class hierarchical_contrastive_loss(torch.nn.Module):
         t = torch.arange(T)
         loss = (logits[:, t, T + t - 1].mean() + logits[:, T + t, t].mean()) / 2
         return loss
+
     def forward(self, z1, z2, alpha=0.5, temporal_unit=0):
-        loss = torch.tensor(0., device=self.device) #, device=z1.device
+        loss = torch.tensor(0.0, device=self.device)  # , device=z1.device
         d = 0
         while z1.size(1) > 1:
             if alpha != 0:
