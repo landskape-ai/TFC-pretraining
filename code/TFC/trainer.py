@@ -111,33 +111,53 @@ def model_pretrain(model, model_optimizer, criterion, train_loader, config, devi
     # optimizer
     model_optimizer.zero_grad()
 
-    for batch_idx, (data, labels, aug1, data_f, aug1_f) in enumerate(train_loader):
+    for batch_idx, (data, labels, aug1, data_f) in enumerate(train_loader):
         data, labels = data.float().to(device), labels.long().to(device) # data: [128, 1, 178], labels: [128]
         aug1 = aug1.float().to(device)  # aug1 = aug2 : [128, 1, 178]
-        data_f, aug1_f = data_f.float().to(device), aug1_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
+        data_f = data_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
+
+        """mask 75% of aug1"""
+        aug1_x
+
+        """mask 50% of data_f"""
+        data_f_x
+
 
         """Produce embeddings"""
-        h_t, z_t, h_f, z_f = model(data, data_f)
-        h_t_aug, z_t_aug, h_f_aug, z_f_aug = model(aug1, aug1_f)
+        h_t, z_t = Time_Encoder(aug1_x)
+        h_f, z_f = Time_Encoder(data_f_x)
+
+        #h_t, z_t, h_f, z_f = model(data, data_f)
+        #h_t_aug, z_t_aug, h_f_aug, z_f_aug = model(aug1, aug1_f)
+
+        """Decoder reconstruction"""
+        z_t_x 
+        z_f_x
+        recon_t = Time_Decoder(z_t_x)
+        recon_f = Freq_Decoder(z_f_x)
+
+
+        """Compute Pre-train loss = Reconstruction loss on time domain + Reconstruction loss on frequency domain + L2 penalty between z_t and z_f + Barlow Twins loss"""
+
 
         """Compute Pre-train loss"""
         """NTXentLoss: normalized temperature-scaled cross entropy loss. From SimCLR"""
-        nt_xent_criterion = NTXentLoss_poly(device, config.batch_size, config.Context_Cont.temperature,
-                                       config.Context_Cont.use_cosine_similarity) # device, 128, 0.2, True
+        # nt_xent_criterion = NTXentLoss_poly(device, config.batch_size, config.Context_Cont.temperature,
+        #                                config.Context_Cont.use_cosine_similarity) # device, 128, 0.2, True
 
-        loss_t = nt_xent_criterion(h_t, h_t_aug)
-        loss_f = nt_xent_criterion(h_f, h_f_aug)
-        l_TF = nt_xent_criterion(z_t, z_f) # this is the initial version of TF loss
+        # loss_t = nt_xent_criterion(h_t, h_t_aug)
+        # loss_f = nt_xent_criterion(h_f, h_f_aug)
+        # l_TF = nt_xent_criterion(z_t, z_f) # this is the initial version of TF loss
 
-        l_1, l_2, l_3 = nt_xent_criterion(z_t, z_f_aug), nt_xent_criterion(z_t_aug, z_f), nt_xent_criterion(z_t_aug, z_f_aug)
-        loss_c = (1 + l_TF - l_1) + (1 + l_TF - l_2) + (1 + l_TF - l_3)
+        # l_1, l_2, l_3 = nt_xent_criterion(z_t, z_f_aug), nt_xent_criterion(z_t_aug, z_f), nt_xent_criterion(z_t_aug, z_f_aug)
+        # loss_c = (1 + l_TF - l_1) + (1 + l_TF - l_2) + (1 + l_TF - l_3)
 
-        lam = 0.2
-        loss = lam*(loss_t + loss_f) + l_TF
+        # lam = 0.2
+        # loss = lam*(loss_t + loss_f) + l_TF
 
-        total_loss.append(loss.item())
-        loss.backward()
-        model_optimizer.step()
+        # total_loss.append(loss.item())
+        # loss.backward()
+        # model_optimizer.step()
 
     print('Pretraining: overall loss:{}, l_t: {}, l_f:{}, l_c:{}'.format(loss, loss_t, loss_f, l_TF))
 
