@@ -192,6 +192,27 @@ def Trainer(
 
     logger.debug("\n################## Training is Done! #########################")
 
+def generate_random_masks(mask_ratio, TSlength_aligned, batch_size):
+    def single_sample_mask():
+        idx = np.random.permutation(TSlength_aligned)[: int(mask_ratio * TSlength_aligned)]
+        mask = np.zeros(TSlength_aligned)
+        mask[idx] = 1
+        return mask
+
+    masks_list = [single_sample_mask() for _ in range(batch_size)]
+    masks = np.stack(masks_list, axis=0)  # (num_samples, ts_size)
+    return masks
+
+
+def forward(self, x):
+    # input is 2 dimension tensor [batch_size, z_dim, seq_len]
+    batch_size, seq_len, z_dim = x.size()
+
+    # generate random mask
+    mask = self.generate_random_masks(batch_size)
+    mask = torch.from_numpy(mask).to(dtype=torch.long, device=x.device)
+
+
 
 def model_pretrain(
     model,
@@ -216,15 +237,22 @@ def model_pretrain(
         aug1 = aug1.float().to(device)  # aug1 = aug2 : [128, 1, 178]
         data_f = data_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
 
-        """mask 75% of aug1"""
-        aug1_x
+        """mask 40% of aug1"""
+        mask_t = generate_random_masks(0.4, 178, 128)
+        mask_t = torch.from_numpy(mask_t).to(dtype=torch.long, device=aug1.device)
+        aug1_x = aug1 * mask_t
 
-        """mask 50% of data_f"""
-        data_f_x
+        """mask 75% of data_f"""
+        mask_f = generate_random_masks(0.75, 178, 128)
+        mask_f = torch.from_numpy(mask_f).to(dtype=torch.long, device=data_f.device)
+        data_f_x = data_f * mask_f
 
         """Produce embeddings"""
         h_t, z_t = Time_Encoder(aug1_x)
         h_f, z_f = Time_Encoder(data_f_x)
+
+        """Concatenate the encoded embeddings with the masked data for both time and frequency domain to feed into the individual decoders"""
+        
 
         # h_t, z_t, h_f, z_f = model(data, data_f)
         # h_t_aug, z_t_aug, h_f_aug, z_f_aug = model(aug1, aug1_f)

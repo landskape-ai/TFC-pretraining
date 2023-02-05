@@ -10,14 +10,14 @@ class Time_Encoder(nn.Module):
         super(Time_Encoder, self).__init__()
 
         encoder_layers_t = TransformerEncoderLayer(
-            configs.TSlength_aligned,
-            dim_feedforward=2 * configs.TSlength_aligned,
+            configs.TSlength_aligned * configs.t_mask_ratio,
+            dim_feedforward=2 * configs.TSlength_aligned * configs.t_mask_ratio,
             nhead=2,
         )
         self.transformer_encoder_t = TransformerEncoder(encoder_layers_t, 2)
 
         self.projector_t = nn.Sequential(
-            nn.Linear(configs.TSlength_aligned, 256),
+            nn.Linear(configs.TSlength_aligned * configs.t_mask_ratio, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Linear(256, 128),
@@ -39,14 +39,14 @@ class Freq_Encoder(nn.Module):
         super(Freq_Encoder, self).__init__()
 
         encoder_layers_f = TransformerEncoderLayer(
-            configs.TSlength_aligned,
-            dim_feedforward=2 * configs.TSlength_aligned,
+            configs.TSlength_aligned * configs.f_mask_ratio,
+            dim_feedforward=2 * configs.TSlength_aligned * configs.f_mask_ratio,
             nhead=2,
         )
         self.transformer_encoder_f = TransformerEncoder(encoder_layers_f, 2)
 
         self.projector_f = nn.Sequential(
-            nn.Linear(configs.TSlength_aligned, 256),
+            nn.Linear(configs.TSlength_aligned * configs.f_mask_ratio, 256),
             nn.BatchNorm1d(256),
             nn.ReLU(),
             nn.Linear(256, 128),

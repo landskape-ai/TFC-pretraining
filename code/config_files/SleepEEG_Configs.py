@@ -14,6 +14,8 @@ class Config(object):
         self.features_len_f = self.features_len
 
         self.TSlength_aligned = 178
+        self.t_mask_ratio = 0.4
+        self.f_mask_ratio = 0.75
 
         self.CNNoutput_channel = 10  # 90 # 10 for Epilepsy model
 
