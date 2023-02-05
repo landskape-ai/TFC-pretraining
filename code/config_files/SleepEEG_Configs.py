@@ -14,6 +14,9 @@ class Config(object):
         self.features_len_f = self.features_len
 
         self.TSlength_aligned = 178
+        self.hidden_dim = 64
+        self.num_heads = 4  # should be divisible by hidden dim
+        self.num_layers = 2
         self.t_mask_ratio = 0.4
         self.f_mask_ratio = 0.75
 
@@ -28,6 +31,9 @@ class Config(object):
         self.beta2 = 0.99
         self.lr = 3e-4  # 3e-4
         self.lr_f = self.lr
+        self.lam = 1
+        self.alpha = 1
+        self.gamma = 1
 
         # data parameters
         self.drop_last = True

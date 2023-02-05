@@ -192,27 +192,6 @@ def Trainer(
 
     logger.debug("\n################## Training is Done! #########################")
 
-def generate_random_masks(mask_ratio, TSlength_aligned, batch_size):
-    def single_sample_mask():
-        idx = np.random.permutation(TSlength_aligned)[: int(mask_ratio * TSlength_aligned)]
-        mask = np.zeros(TSlength_aligned)
-        mask[idx] = 1
-        return mask
-
-    masks_list = [single_sample_mask() for _ in range(batch_size)]
-    masks = np.stack(masks_list, axis=0)  # (num_samples, ts_size)
-    return masks
-
-
-def forward(self, x):
-    # input is 2 dimension tensor [batch_size, z_dim, seq_len]
-    batch_size, seq_len, z_dim = x.size()
-
-    # generate random mask
-    mask = self.generate_random_masks(batch_size)
-    mask = torch.from_numpy(mask).to(dtype=torch.long, device=x.device)
-
-
 
 def model_pretrain(
     model,
@@ -237,56 +216,29 @@ def model_pretrain(
         aug1 = aug1.float().to(device)  # aug1 = aug2 : [128, 1, 178]
         data_f = data_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
 
-        """mask 40% of aug1"""
-        mask_t = generate_random_masks(0.4, 178, 128)
-        mask_t = torch.from_numpy(mask_t).to(dtype=torch.long, device=aug1.device)
-        aug1_x = aug1 * mask_t
-
-        """mask 75% of data_f"""
-        mask_f = generate_random_masks(0.75, 178, 128)
-        mask_f = torch.from_numpy(mask_f).to(dtype=torch.long, device=data_f.device)
-        data_f_x = data_f * mask_f
-
-        """Produce embeddings"""
-        h_t, z_t = Time_Encoder(aug1_x)
-        h_f, z_f = Time_Encoder(data_f_x)
-
-        """Concatenate the encoded embeddings with the masked data for both time and frequency domain to feed into the individual decoders"""
+        # forward pass
+        h_time, h_freq, z_time, z_freq, mask_t, mask_f = model(aug1, data_f)
         
-
-        # h_t, z_t, h_f, z_f = model(data, data_f)
-        # h_t_aug, z_t_aug, h_f_aug, z_f_aug = model(aug1, aug1_f)
-
-        """Decoder reconstruction"""
-        z_t_x
-        z_f_x
-        recon_t = Time_Decoder(z_t_x)
-        recon_f = Freq_Decoder(z_f_x)
-
+        
         """Compute Pre-train loss = Reconstruction loss on time domain + Reconstruction loss on frequency domain + L2 penalty between z_t and z_f + Barlow Twins loss"""
+        batch_size = h_time.shape[0]
+        rec_loss_t = F.mse_loss(h_time.view(batch_size, -1), aug1.view(batch_size, -1))
+        rec_loss_f = F.mse_loss(h_freq.view(batch_size, -1), data_f.view(batch_size, -1))
+        
+        l2_penalty = torch.cdist(z_time, z_freq, p=2).mean()
+        # add covariance matrix loss from barlow twins
+        cov_loss = 0
+        
+        # add
+        loss = config.lam * (rec_loss_t + rec_loss_f) - config.alpha * l2_penalty + config.gamma * cov_loss
 
-        """Compute Pre-train loss"""
-        """NTXentLoss: normalized temperature-scaled cross entropy loss. From SimCLR"""
-        # nt_xent_criterion = NTXentLoss_poly(device, config.batch_size, config.Context_Cont.temperature,
-        #                                config.Context_Cont.use_cosine_similarity) # device, 128, 0.2, True
-
-        # loss_t = nt_xent_criterion(h_t, h_t_aug)
-        # loss_f = nt_xent_criterion(h_f, h_f_aug)
-        # l_TF = nt_xent_criterion(z_t, z_f) # this is the initial version of TF loss
-
-        # l_1, l_2, l_3 = nt_xent_criterion(z_t, z_f_aug), nt_xent_criterion(z_t_aug, z_f), nt_xent_criterion(z_t_aug, z_f_aug)
-        # loss_c = (1 + l_TF - l_1) + (1 + l_TF - l_2) + (1 + l_TF - l_3)
-
-        # lam = 0.2
-        # loss = lam*(loss_t + loss_f) + l_TF
-
-        # total_loss.append(loss.item())
-        # loss.backward()
-        # model_optimizer.step()
+        total_loss.append(loss.item())
+        loss.backward()
+        model_optimizer.step()
 
     print(
-        "Pretraining: overall loss:{}, l_t: {}, l_f:{}, l_c:{}".format(
-            loss, loss_t, loss_f, l_TF
+        "Pretraining: overall loss:{}, rec_loss_t: {}, rec_loss_f:{}, l2_penalty:{}, cov_loss: {}".format(
+            loss, rec_loss_t, rec_loss_f, l2_penalty, cov_loss
         )
     )
 

@@ -2,7 +2,6 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
-from SleepEEG_Configs import Config as configs
 
 
 """Two contrastive encoders"""
