@@ -116,7 +116,10 @@ logger.debug("Data loaded ...")
 
 # Load Model
 """Here are two models, one basemodel, another is temporal contrastive model"""
-TFC_model = TFC(configs).to(device)
+# TFC_model = TFC(configs).to(device)
+# TFC_model = SSL_Timeseries(configs).to(device)
+TFC_model = None
+
 classifier = target_classifier(configs).to(device)
 temporal_contr_model = None
 
@@ -137,18 +140,23 @@ if training_mode == "fine_tune_test":
     pretrained_dict = chkpoint["model_state_dict"]
     TFC_model.load_state_dict(pretrained_dict)
 
-model_optimizer = torch.optim.Adam(
-    TFC_model.parameters(),
-    lr=configs.lr,
-    betas=(configs.beta1, configs.beta2),
-    weight_decay=3e-4,
-)
-classifier_optimizer = torch.optim.Adam(
-    classifier.parameters(),
-    lr=configs.lr,
-    betas=(configs.beta1, configs.beta2),
-    weight_decay=3e-4,
-)
+# model_optimizer = torch.optim.Adam(
+#     TFC_model.parameters(),
+#     None,
+#     lr=configs.lr,
+#     betas=(configs.beta1, configs.beta2),
+#     weight_decay=3e-4,
+# )
+# classifier_optimizer = torch.optim.Adam(
+#     classifier.parameters(),
+#     lr=configs.lr,
+#     betas=(configs.beta1, configs.beta2),
+#     weight_decay=3e-4,
+# )
+
+model_optimizer = None
+
+classifier_optimizer = None
 
 # Trainer
 Trainer(

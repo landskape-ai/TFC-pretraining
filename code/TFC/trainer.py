@@ -213,6 +213,48 @@ def forward(self, x):
     mask = torch.from_numpy(mask).to(dtype=torch.long, device=x.device)
 
 
+def tokenize(x, token_size):
+    """
+    Tokenizes x into tokens of size token_size
+    Assumes x is divisible by token_size
+    """
+    # x = (batch_size, feature_size, context_window)
+    batch_size = x.shape[0]
+    feature_size = x.shape[1]
+    context_window = x.shape[2]
+    num_tokens = context_window / feature_size
+    x = x.reshape(batch_size, feature_size, num_tokens, token_size)
+    # returns a tensor tokenized
+    return x # (batch_size, features, tokens, token_size) 
+
+def convert_mask_to_shape(rand_mask, token_size, feature_size):
+    rand_mask_1 = np.expand_dims(rand_mask, axis=2)
+    rand_mask_2 = np.repeat(rand_mask_1, token_size, axis=2)
+    rand_mask_3 = np.expand_dims(rand_mask_2, axis=1)
+    rand_mask_4 = np.repeat(rand_mask_3, feature_size, axis=1)
+    return rand_mask_4
+
+def generate_random_masks_mini_tokens(mask_ratio, num_tokens, batch_size):
+    """ Generate random masks for the mini tokens """
+    def single_sample_mask():
+        idx = np.random.permutation(num_tokens)[: int(mask_ratio * num_tokens)]
+        mask = np.zeros(num_tokens)
+        mask[idx] = 1
+        return mask
+    masks_list = [single_sample_mask() for _ in range(batch_size)]
+    masks = np.stack(masks_list, axis=0)  # (num_samples, num_tokens)
+    return masks
+
+def generate_random_masks(mask_ratio, TSlength_aligned, batch_size):
+    def single_sample_mask():
+        idx = np.random.permutation(TSlength_aligned)[: int(mask_ratio * TSlength_aligned)]
+        mask = np.zeros(TSlength_aligned)
+        mask[idx] = 1
+        return mask
+
+    masks_list = [single_sample_mask() for _ in range(batch_size)]
+    masks = np.stack(masks_list, axis=0)  # (num_samples, ts_size)
+    return masks
 
 def model_pretrain(
     model,
@@ -224,11 +266,11 @@ def model_pretrain(
     training_mode,
 ):
     total_loss = []
-    model.train()
+    # model.train()
     global loss, loss_t, loss_f, l_TF, loss_c, data_test, data_f_test
 
     # optimizer
-    model_optimizer.zero_grad()
+    # model_optimizer.zero_grad()
 
     for batch_idx, (data, labels, aug1, data_f) in enumerate(train_loader):
         data, labels = data.float().to(device), labels.long().to(
@@ -237,29 +279,84 @@ def model_pretrain(
         aug1 = aug1.float().to(device)  # aug1 = aug2 : [128, 1, 178]
         data_f = data_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
 
-        """mask 40% of aug1"""
-        mask_t = generate_random_masks(0.4, 178, 128)
-        mask_t = torch.from_numpy(mask_t).to(dtype=torch.long, device=aug1.device)
-        aug1_x = aug1 * mask_t
+        feature_size = 1 # hardcode for now
 
-        """mask 75% of data_f"""
-        mask_f = generate_random_masks(0.75, 178, 128)
+        # (batch_size, feature_size, num_tokens, token_size)
+        aug1_tokenized = tokenize(aug1, config.mini_token_length)
+        data_f_tokenized = tokenize(data_f, config.mini_token_length)
+
+        num_tokens = config.TSlength_aligned / config.mini_token_length
+        """mask 40% of aug1 tokens"""
+        # (batch_size, mask[num_tokens])
+        mask_t_orig = generate_random_masks_mini_tokens(0.4, num_tokens, config.batch_size)
+        mask_t = convert_mask_to_shape(mask_t_orig, config.mini_token_length, feature_size)
+        mask_t = torch.from_numpy(mask_t).to(dtype=torch.long, device=aug1.device)
+        aug1_x = aug1_tokenized * mask_t
+
+        """mask 75% of data_f tokens"""
+        mask_f_orig = generate_random_masks_mini_tokens(0.75, num_tokens, config.batch_size)
+        mask_f = convert_mask_to_shape(mask_f_orig, config.mini_token_length, feature_size)
         mask_f = torch.from_numpy(mask_f).to(dtype=torch.long, device=data_f.device)
-        data_f_x = data_f * mask_f
+        data_f_x = data_f_tokenized * mask_f # (batch_size, feature_size, num_tokens, token_size)
+
+        # """mask 40% of aug1"""
+        # mask_t = generate_random_masks(0.4, config.TSlength_aligned, config.batch_size)
+        # mask_t = torch.from_numpy(mask_t).to(dtype=torch.long, device=aug1.device)
+        # aug1_x = aug1 * mask_t
+
+        # """mask 75% of data_f"""
+        # mask_f = generate_random_masks(0.75, config.TSlength_aligned, config.batch_size)
+        # mask_f = torch.from_numpy(mask_f).to(dtype=torch.long, device=data_f.device)
+        # data_f_x = data_f * mask_f
 
         """Produce embeddings"""
-        h_t, z_t = Time_Encoder(aug1_x)
-        h_f, z_f = Time_Encoder(data_f_x)
+        # z_t, z_f are encoded embeddings
+        # h_t, z_t = Time_Encoder(aug1_x)
+        # h_f, z_f = Time_Encoder(data_f_x)
+
+
+        batch_size = aug1.shape[0]
+        token_size = model.configs.mini_token_length
+        t_enc = model.time_encoder
 
         """Concatenate the encoded embeddings with the masked data for both time and frequency domain to feed into the individual decoders"""
-        
+        for b in range(batch_size):
 
-        # h_t, z_t, h_f, z_f = model(data, data_f)
-        # h_t_aug, z_t_aug, h_f_aug, z_f_aug = model(aug1, aug1_f)
+            # TODO: alter so that the masked ones go through as a batch
+            # 
+
+            aug1_list = []
+            data_f_list = []
+            for i in range(num_tokens):
+                if mask_t_orig[b, i] == 1:
+                    # if mask use encode
+                    aug1_x_token = aug1_x[b, :, i, :].reshape(1, feature_size, token_size).to(device)
+                    print("BTRUh", aug1_x_token.shape)
+                    h_t, z_t = t_enc(aug1_x_token)
+                    # aug1_list.append(z_t)
+                    aug1_list.append(z_t.cpu())
+                else:
+                    # else append orig token
+                    aug_1_orig_tok = aug1_tokenized[b, :, i, :].reshape(1, feature_size, token_size)
+                    aug1_list.append(aug_1_orig_tok.cpu())
+
+                if mask_f_orig[b, i] == 1:
+                    # if mask use encode
+                    data_f_token = data_f_x[b, :, i, :].reshape(1, feature_size, token_size).to(device)
+                    h_f, z_f = t_enc(data_f_token)
+                    data_f_list.append(z_f.cpu())
+                else:
+                    # else append orig token
+                    data_f_orig_tok = data_f_tokenized[b, :, i, :].reshape(1, feature_size, token_size)
+                    data_f_list.append(data_f_orig_tok.cpu())
+
+            aug1_list = torch.stack(aug1_list, axis=0).to(device)
+            data_f_list = torch.stack(data_f_list, axis=0).to(device)
+
 
         """Decoder reconstruction"""
-        z_t_x
-        z_f_x
+        # z_t_x
+        # z_f_x
         recon_t = Time_Decoder(z_t_x)
         recon_f = Freq_Decoder(z_f_x)
 

@@ -13,9 +13,13 @@ class Config(object):
         self.features_len = 127
         self.features_len_f = self.features_len
 
-        self.TSlength_aligned = 178
+
+        # divisible by mini token
+        self.mini_token_length = 6
+        self.TSlength_aligned = 180 
+        self.num_tokens = int(self.TSlength_aligned / self.mini_token_length)
         self.t_mask_ratio = 0.4
-        self.f_mask_ratio = 0.75
+        self.f_mask_ratio = 0.7
 
         self.CNNoutput_channel = 10  # 90 # 10 for Epilepsy model
 
