@@ -236,7 +236,6 @@ def model_pretrain(
         l2_penalty = torch.cdist(z_time, z_freq, p=2).mean()
 
         # add covariance matrix loss from barlow twins
-<<<<<<< HEAD
 
         # 1 0 0
         # 0 1 0
@@ -253,10 +252,6 @@ def model_pretrain(
 
         cov_loss = on_diag + config.lam_bt * off_diag
         
-=======
-        cov_loss = 0
-
->>>>>>> 9169cd1da33afcd3447e138648ce11e4f0002dec
         # add
         loss = (
             config.lam * (rec_loss_t + rec_loss_f)
@@ -269,7 +264,7 @@ def model_pretrain(
         model_optimizer.step()
 
     print(
-        "Pretraining: overall loss:{}, rec_loss_t: {}, rec_loss_f:{}, l2_penalty:{}, cov_loss: {}".format(
+        "Pretraining: overall loss:{}, rec_loss_t: {}, rec_loss_f:{}, l2_penalty:{}, bt_loss: {}".format(
             loss, rec_loss_t, rec_loss_f, l2_penalty, cov_loss
         )
     )
