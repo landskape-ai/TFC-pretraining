@@ -193,6 +193,13 @@ def Trainer(
     logger.debug("\n################## Training is Done! #########################")
 
 
+def off_diagonal(x):
+    # return a flattened view of the off-diagonal elements of a square matrix
+    n, m = x.shape
+    assert n == m
+    return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
+
+
 def model_pretrain(
     model,
     model_optimizer,
@@ -226,8 +233,23 @@ def model_pretrain(
         rec_loss_f = F.mse_loss(h_freq.view(batch_size, -1), data_f.view(batch_size, -1))
         
         l2_penalty = torch.cdist(z_time, z_freq, p=2).mean()
+
         # add covariance matrix loss from barlow twins
-        cov_loss = 0
+
+        # 1 0 0
+        # 0 1 0
+        # 0 0 1
+        batch_size = z_time.shape[0]
+        # both augmentations
+        z1,z2 = torch.cat((z_time[0],z_freq[0]),dim=1), torch.cat((z_freq[1],z_time[1]),dim=1)
+        c = z1.T @ z2 / batch_size 
+
+        on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
+        off_diag = off_diagonal(c).pow_(2).sum()
+
+        # joint matrix on diag off diag
+
+        cov_loss = on_diag + config.lam_bt * off_diag
         
         # add
         loss = config.lam * (rec_loss_t + rec_loss_f) - config.alpha * l2_penalty + config.gamma * cov_loss
