@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 
 import numpy as np
+import wandb
 from dataloader import data_generator
 from model import *
 from trainer import Trainer
@@ -27,6 +28,21 @@ parser.add_argument(
     type=str,
     help="pre_train, fine_tune_test",
 )
+
+# wandb parameters
+# boolean parameter for having wandb
+parser.add_argument("--wandb", action="store_true", help="Activate wandb")
+parser.add_argument("--entity", default="landskape", type=str, help="wandb entity")
+parser.add_argument(
+    "--output_dir",
+    default="/home/mila/d/diganta.misra/scratch",
+    type=str,
+    help="wandb output dir",
+)
+parser.add_argument(
+    "--project_name", default="FMAE+BT", type=str, help="wandb project name"
+)
+parser.add_argument("--run_name", default="Run1", type=str, help="wandb run name")
 
 parser.add_argument(
     "--pretrain_dataset",
@@ -114,11 +130,27 @@ train_dl, valid_dl, test_dl = data_generator(
 )
 logger.debug("Data loaded ...")
 
+# wandb.init
+if args.wandb:
+    wandb_logger = wandb.init(
+        entity=args.entity,
+        project=args.project_name,
+        name=args.run_name,
+        dir=args.output_dir,
+        config=args,
+    )
+
+    wandb_logger.config.update(configs)
+
 # Load Model
 """Here are two models, one basemodel, another is temporal contrastive model"""
 TFC_model = TFC(configs).to(device)
 classifier = target_classifier(configs).to(device)
 temporal_contr_model = None
+
+if args.wandb:
+    wandb_logger.watch(TFC_model)
+    wandb_logger.watch(classifier)
 
 
 if training_mode == "fine_tune_test":
@@ -164,6 +196,7 @@ Trainer(
     configs,
     experiment_log_dir,
     training_mode,
+    wandb_logger,
 )
 
 logger.debug(f"Training time is : {datetime.now()-start_time}")

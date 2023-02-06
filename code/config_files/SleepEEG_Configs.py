@@ -32,6 +32,7 @@ class Config(object):
         self.lr = 3e-4  # 3e-4
         self.lr_f = self.lr
         self.lam = 1
+        self.lam_bt = 0.0051
         self.alpha = 1
         self.gamma = 1
 

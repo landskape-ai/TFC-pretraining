@@ -31,6 +31,7 @@ def Trainer(
     config,
     experiment_log_dir,
     training_mode,
+    wandb_logger=None,
 ):
     # Start training
     logger.debug("Training started ....")
@@ -50,6 +51,7 @@ def Trainer(
                 config,
                 device,
                 training_mode,
+                wandb_logger=wandb_logger,
             )
             logger.debug(
                 f"\nPre-training Epoch : {epoch}", f"Train Loss : {train_loss:.4f}"
@@ -208,6 +210,7 @@ def model_pretrain(
     config,
     device,
     training_mode,
+    wandb_logger,
 ):
     total_loss = []
     model.train()
@@ -263,12 +266,24 @@ def model_pretrain(
         model_optimizer.step()
 
     print(
-        "Pretraining: overall loss:{}, rec_loss_t: {}, rec_loss_f:{}, l2_penalty:{}, cov_loss: {}".format(
+        "Pretraining: overall loss:{}, rec_loss_t: {}, rec_loss_f:{}, l2_penalty:{}, bt_loss: {}".format(
             loss, rec_loss_t, rec_loss_f, l2_penalty, cov_loss
         )
     )
 
     ave_loss = torch.tensor(total_loss).mean()
+
+    # wandb logging
+    if wandb_logger is not None:
+        wandb_logger.log(
+            {
+                "Loss/pretrain_loss": ave_loss,
+                "Loss/pretrain_rec_loss_t": rec_loss_t,
+                "Loss/pretrain_rec_loss_f": rec_loss_f,
+                "Loss/pretrain_l2_penalty": l2_penalty,
+                "Loss/pretrain_bt_loss": cov_loss,
+            }
+        )
 
     return ave_loss
 
