@@ -36,6 +36,7 @@ class Config(object):
         self.alpha = 1
         self.gamma = 1
 
+
         # data parameters
         self.drop_last = True
         self.batch_size = 128
