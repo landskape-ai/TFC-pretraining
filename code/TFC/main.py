@@ -5,12 +5,11 @@ import os
 from datetime import datetime
 
 import numpy as np
+import wandb
 from dataloader import data_generator
 from model import *
 from trainer import Trainer
 from utils import _logger
-
-import wandb
 
 # Args selections
 start_time = datetime.now()
@@ -32,10 +31,17 @@ parser.add_argument(
 
 # wandb parameters
 # boolean parameter for having wandb
-parser.add_argument("--wandb", action='store_true', help="Activate wandb")
+parser.add_argument("--wandb", action="store_true", help="Activate wandb")
 parser.add_argument("--entity", default="landskape", type=str, help="wandb entity")
-parser.add_argument("--output_dir", default="/home/mila/d/diganta.misra/scratch", type=str, help="wandb output dir")
-parser.add_argument("--project_name", default="FMAE+BT", type=str, help="wandb project name")
+parser.add_argument(
+    "--output_dir",
+    default="/home/mila/d/diganta.misra/scratch",
+    type=str,
+    help="wandb output dir",
+)
+parser.add_argument(
+    "--project_name", default="FMAE+BT", type=str, help="wandb project name"
+)
 parser.add_argument("--run_name", default="Run1", type=str, help="wandb run name")
 
 parser.add_argument(
@@ -190,7 +196,7 @@ Trainer(
     configs,
     experiment_log_dir,
     training_mode,
-    wandb_logger
+    wandb_logger,
 )
 
 logger.debug(f"Training time is : {datetime.now()-start_time}")

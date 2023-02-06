@@ -210,7 +210,7 @@ def model_pretrain(
     config,
     device,
     training_mode,
-    wandb_logger
+    wandb_logger,
 ):
     total_loss = []
     model.train()
@@ -245,8 +245,10 @@ def model_pretrain(
         # 0 0 1
         batch_size = z_time.shape[0]
         # both augmentations
-        z1,z2 = torch.cat((z_time[0],z_freq[0]),dim=1), torch.cat((z_freq[1],z_time[1]),dim=1)
-        c = z1.T @ z2 / batch_size 
+        z1, z2 = torch.cat((z_time[0], z_freq[0]), dim=1), torch.cat(
+            (z_freq[1], z_time[1]), dim=1
+        )
+        c = z1.T @ z2 / batch_size
 
         on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
         off_diag = off_diagonal(c).pow_(2).sum()
@@ -254,7 +256,7 @@ def model_pretrain(
         # joint matrix on diag off diag
 
         cov_loss = on_diag + config.lam_bt * off_diag
-        
+
         # add
         loss = (
             config.lam * (rec_loss_t + rec_loss_f)
