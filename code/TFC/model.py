@@ -62,7 +62,7 @@ class Time_Encoder(nn.Module):
         self.relu = nn.ReLU()
         self.ff2_t = nn.Linear(256, 128, bias=False)
 
-        # final batch norm 
+        # final batch norm
         self.bn_final = nn.BatchNorm1d(128)
 
     def forward(self, x_in_t):
@@ -80,7 +80,9 @@ class Time_Encoder(nn.Module):
 
         """ Masking """
         x_in_t_masked, mask_t, ids_restore_t = random_masking(x_in_t, self.mask_ratio)
-        x_in_t_masked_2 ,mask_t2, ids_restore_t2 = random_masking(x_in_t, self.mask_ratio)
+        x_in_t_masked_2, mask_t2, ids_restore_t2 = random_masking(
+            x_in_t, self.mask_ratio
+        )
         x_in_t_massed = torch.cat((x_in_t_masked, x_in_t_masked_2), dim=0)
 
         """Use Transformer"""
@@ -97,10 +99,9 @@ class Time_Encoder(nn.Module):
 
         z_time = self.bn_final(z_time)
 
+        h_time, h_time2 = torch.split(h_time, h_time.size(0) // 2, dim=0)
+        z_time, z_time2 = torch.split(z_time, z_time.size(0) // 2, dim=0)
 
-        h_time, h_time2 = torch.split(h_time, h_time.size(0)//2, dim=0)
-        z_time, z_time2 = torch.split(z_time, z_time.size(0)//2, dim=0)
-        
         tuple1 = h_time, z_time, mask_t, ids_restore_t
         tuple2 = h_time2, z_time2, mask_t2, ids_restore_t2
 
@@ -136,7 +137,7 @@ class Freq_Encoder(nn.Module):
         self.relu = nn.ReLU()
         self.ff2_f = nn.Linear(256, 128, bias=False)
 
-        # final batch norm 
+        # final batch norm
         self.bn_final = nn.BatchNorm1d(128)
 
     def forward(self, x_in_f):
@@ -154,8 +155,10 @@ class Freq_Encoder(nn.Module):
 
         """ Masking """
         x_in_f_masked, mask_f, ids_restore_f = random_masking(x_in_f, self.mask_ratio)
-        x_in_f_masked_2 ,mask_f2, ids_restore_f2 = random_masking(x_in_f, self.mask_ratio)
-        # TODO: hamming distance 
+        x_in_f_masked_2, mask_f2, ids_restore_f2 = random_masking(
+            x_in_f, self.mask_ratio
+        )
+        # TODO: hamming distance
         x_in_f_masked = torch.cat((x_in_f_masked, x_in_f_masked_2), dim=0)
 
         """Frequency-based contrastive encoder"""
@@ -172,9 +175,9 @@ class Freq_Encoder(nn.Module):
 
         z_freq = self.bn_final(z_freq)
 
-        h_freq, h_freq2 = torch.split(h_freq, h_freq.size(0)//2, dim=0)
-        z_freq, z_freq2 = torch.split(z_freq, z_freq.size(0)//2, dim=0)
-        
+        h_freq, h_freq2 = torch.split(h_freq, h_freq.size(0) // 2, dim=0)
+        z_freq, z_freq2 = torch.split(z_freq, z_freq.size(0) // 2, dim=0)
+
         tuple1 = h_freq, z_freq, mask_f, ids_restore_f
         tuple2 = h_freq2, z_freq2, mask_f2, ids_restore_f2
 
@@ -257,10 +260,12 @@ class TFC(nn.Module):
 
     def forward(self, x_in_t, x_in_f):
         """Use Transformer"""
-        (h_time, z_time, mask_t, ids_restore_t), z_time2  = self.time_encoder(x_in_t)
+        (h_time, z_time, mask_t, ids_restore_t), z_time2 = self.time_encoder(x_in_t)
         (h_freq, z_freq, mask_f, ids_restore_f), z_freq2 = self.freq_encoder(x_in_f)
 
-        z1,z2 = torch.cat((z_time,z_freq),dim=1), torch.cat((z_time2,z_freq2),dim=1)
+        z1, z2 = torch.cat((z_time, z_freq), dim=1), torch.cat(
+            (z_time2, z_freq2), dim=1
+        )
         z1 = self.norm(z1)
         z2 = self.norm(z2)
 

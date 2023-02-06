@@ -242,14 +242,14 @@ def model_pretrain(
 
         batch_size = z_time.shape[0]
         # joint matrix on diag off diag on both augmentations
-        
-        c = z1.T @ z2 / batch_size 
+
+        c = z1.T @ z2 / batch_size
 
         on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
         off_diag = off_diagonal(c).pow_(2).sum()
 
         cov_loss = on_diag + config.lam_bt * off_diag
-        
+
         # add
         loss = (
             config.lam * (rec_loss_t + rec_loss_f)

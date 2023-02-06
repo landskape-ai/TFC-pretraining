@@ -68,7 +68,6 @@ def remove_frequency(x, pertub_ratio=0.0):
 
 
 def add_frequency(x, pertub_ratio=0.0):
-
     mask = torch.cuda.FloatTensor(x.shape).uniform_() > (
         1 - pertub_ratio
     )  # only pertub_ratio of all values are True
