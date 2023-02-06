@@ -31,10 +31,10 @@ class Config(object):
         self.beta2 = 0.99
         self.lr = 3e-4  # 3e-4
         self.lr_f = self.lr
-        self.lam = 1
+        self.lam = 0.8
         self.lam_bt = 0.0051
-        self.alpha = 1
-        self.gamma = 1
+        self.alpha = 0.1
+        self.gamma = 0.1
 
         # data parameters
         self.drop_last = True
