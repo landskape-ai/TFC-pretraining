@@ -91,7 +91,12 @@ class Time_Encoder(nn.Module):
         z_time = self.bn_t(z_time.transpose(-2, -1))  # (batch_size, 256, seq_len)
         z_time = self.relu(z_time.transpose(-2, -1))  # (batch_size, seq_len, 256)
         z_time = self.ff2_t(z_time)  # (batch_size, seq_len, 128)
+
+        # avg pool
+        z_time = z_time.mean(dim=1)  # (batch_size, 128)
+
         z_time = self.bn_final(z_time)
+
 
         h_time, h_time2 = torch.split(h_time, h_time.size(0)//2, dim=0)
         z_time, z_time2 = torch.split(z_time, z_time.size(0)//2, dim=0)
@@ -161,6 +166,10 @@ class Freq_Encoder(nn.Module):
         z_freq = self.bn_f(z_freq.transpose(-2, -1))  # (batch_size, 256, seq_len)
         z_freq = self.relu(z_freq.transpose(-2, -1))  # (batch_size, seq_len, 256)
         z_freq = self.ff2_f(z_freq)  # (batch_size, seq_len, 128)
+
+        # avg pool
+        z_freq = z_freq.mean(dim=1)  # (batch_size, 128)
+
         z_freq = self.bn_final(z_freq)
 
         h_freq, h_freq2 = torch.split(h_freq, h_freq.size(0)//2, dim=0)

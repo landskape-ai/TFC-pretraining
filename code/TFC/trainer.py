@@ -239,9 +239,6 @@ def model_pretrain(
         l2_penalty = torch.cdist(z_time, z_freq, p=2).mean()
 
         # Barlow Twins loss
-        # first avg pool the projections
-        z_time, z_time2 = z_time.mean(1), z_time2.mean(1)
-        z_freq, z_freq2 = z_freq.mean(1), z_freq2.mean(1) 
 
         batch_size = z_time.shape[0]
         # joint matrix on diag off diag on both augmentations
