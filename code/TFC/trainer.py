@@ -51,6 +51,7 @@ def Trainer(
                 config,
                 device,
                 training_mode,
+                epoch,
                 wandb_logger=wandb_logger,
             )
             logger.debug(
@@ -210,6 +211,7 @@ def model_pretrain(
     config,
     device,
     training_mode,
+    epoch,
     wandb_logger,
 ):
     total_loss = []
@@ -227,13 +229,15 @@ def model_pretrain(
         data_f = data_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
 
         # forward pass
-        h_time, h_freq, mask_t, mask_f, z1, z2 = model(data, data_f)
+        h_time, h_freq, mask_t, mask_f, z1, z2, z_time, z_freq = model(data, data_f)
 
         """Compute Pre-train loss = Reconstruction loss on time domain + Reconstruction loss on frequency domain + L2 penalty between z_t and z_f + Barlow Twins loss"""
         batch_size = h_time.shape[0]
-        rec_loss_t = F.mse_loss(h_time.view(batch_size, -1), aug1.view(batch_size, -1))
+        rec_loss_t = F.mse_loss(
+            h_time.view(batch_size, -1), aug1.view(batch_size, -1), reduction="mean"
+        )
         rec_loss_f = F.mse_loss(
-            h_freq.view(batch_size, -1), data_f.view(batch_size, -1)
+            h_freq.view(batch_size, -1), data_f.view(batch_size, -1), reduction="mean"
         )
 
         l2_penalty = torch.cdist(z_time, z_freq, p=2).mean()
@@ -251,11 +255,20 @@ def model_pretrain(
         cov_loss = on_diag + config.lam_bt * off_diag
 
         # add
-        loss = (
-            config.lam * (rec_loss_t + rec_loss_f)
-            - config.alpha * l2_penalty
-            + config.gamma * cov_loss
-        )
+        if epoch < 250:
+            l2_penalty = 0
+            cov_loss = 0
+            loss = (
+                ((rec_loss_t + rec_loss_f) / 2)
+                - config.alpha * l2_penalty
+                + config.gamma * cov_loss
+            )
+        else:
+            loss = (
+                config.lam * ((rec_loss_t + rec_loss_f) / 2)
+                - config.alpha * l2_penalty
+                + config.gamma * cov_loss
+            )
 
         total_loss.append(loss.item())
         loss.backward()
@@ -273,6 +286,7 @@ def model_pretrain(
     if wandb_logger is not None:
         wandb_logger.log(
             {
+                "Epoch": epoch,
                 "Loss/pretrain_loss": ave_loss,
                 "Loss/pretrain_rec_loss_t": rec_loss_t,
                 "Loss/pretrain_rec_loss_f": rec_loss_f,

@@ -83,7 +83,7 @@ class Time_Encoder(nn.Module):
         x_in_t_masked_2, mask_t2, ids_restore_t2 = random_masking(
             x_in_t, self.mask_ratio
         )
-        x_in_t_massed = torch.cat((x_in_t_masked, x_in_t_masked_2), dim=0)
+        x_in_t_masked = torch.cat((x_in_t_masked, x_in_t_masked_2), dim=0)
 
         """Use Transformer"""
         h_time = self.transformer_encoder_t(x_in_t_masked)
@@ -253,7 +253,7 @@ class TFC(nn.Module):
 
         self.time_encoder = Time_Encoder(configs)
         self.freq_encoder = Freq_Encoder(configs)
-        self.norm = nn.BatchNorm1D(256)
+        self.norm = nn.BatchNorm1d(256)
 
         self.time_decoder = Time_Decoder(configs)
         self.freq_decoder = Freq_Decoder(configs)
@@ -276,6 +276,8 @@ class TFC(nn.Module):
         mask_tokens = torch.zeros(1, 1, self.configs.hidden_dim).repeat(
             h_time.shape[0], ids_restore_t.shape[1] + 1 - h_time.shape[1], 1
         )
+        # put mask_tokens on cuda
+        mask_tokens = mask_tokens.cuda()
         h_time_ = torch.cat([h_time, mask_tokens], dim=1)
         h_time = torch.gather(
             h_time_,
@@ -286,6 +288,7 @@ class TFC(nn.Module):
         mask_tokens = torch.zeros(1, 1, self.configs.hidden_dim).repeat(
             h_freq.shape[0], ids_restore_f.shape[1] + 1 - h_freq.shape[1], 1
         )
+        mask_tokens = mask_tokens.cuda()
         h_freq_ = torch.cat([h_freq, mask_tokens], dim=1)
         h_freq = torch.gather(
             h_freq_,
@@ -297,7 +300,7 @@ class TFC(nn.Module):
         h_time = self.time_decoder(h_time)
         h_freq = self.freq_decoder(h_freq)
 
-        return h_time, h_freq, mask_t, mask_f, z1, z2
+        return h_time, h_freq, mask_t, mask_f, z1, z2, z_time, z_freq
 
 
 """Downstream classifier only used in finetuning"""
