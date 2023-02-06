@@ -250,6 +250,7 @@ class TFC(nn.Module):
 
         self.time_encoder = Time_Encoder(configs)
         self.freq_encoder = Freq_Encoder(configs)
+        self.norm = nn.BatchNorm1D(256)
 
         self.time_decoder = Time_Decoder(configs)
         self.freq_decoder = Freq_Decoder(configs)
@@ -258,6 +259,10 @@ class TFC(nn.Module):
         """Use Transformer"""
         (h_time, z_time, mask_t, ids_restore_t), z_time2  = self.time_encoder(x_in_t)
         (h_freq, z_freq, mask_f, ids_restore_f), z_freq2 = self.freq_encoder(x_in_f)
+
+        z1,z2 = torch.cat((z_time,z_freq),dim=1), torch.cat((z_time2,z_freq2),dim=1)
+        z1 = self.norm(z1)
+        z2 = self.norm(z2)
 
         # h_time, h_freq: (batch_size, unmasked_seq_len, hidden_dim) [directly from encoder]
         # h_time, h_freq: (batch_size, seq_len, hidden_dim) [input expected by decoder]
@@ -287,7 +292,7 @@ class TFC(nn.Module):
         h_time = self.time_decoder(h_time)
         h_freq = self.freq_decoder(h_freq)
 
-        return h_time, h_freq, z_time, z_freq, mask_t, mask_f, z_time2, z_freq2
+        return h_time, h_freq, mask_t, mask_f, z1, z2
 
 
 """Downstream classifier only used in finetuning"""

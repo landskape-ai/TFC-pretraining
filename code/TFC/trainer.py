@@ -227,7 +227,7 @@ def model_pretrain(
         data_f = data_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
 
         # forward pass
-        h_time, h_freq, z_time, z_freq, mask_t, mask_f, z_time2, z_freq2 = model(aug1, data_f)
+        h_time, h_freq, mask_t, mask_f, z1, z2 = model(data, data_f)
 
         """Compute Pre-train loss = Reconstruction loss on time domain + Reconstruction loss on frequency domain + L2 penalty between z_t and z_f + Barlow Twins loss"""
         batch_size = h_time.shape[0]
@@ -242,7 +242,6 @@ def model_pretrain(
 
         batch_size = z_time.shape[0]
         # joint matrix on diag off diag on both augmentations
-        z1,z2 = torch.cat((z_time,z_freq),dim=1), torch.cat((z_time2,z_freq2),dim=1)
         
         c = z1.T @ z2 / batch_size 
 
