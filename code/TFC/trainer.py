@@ -224,7 +224,7 @@ def model_pretrain(
         data_f = data_f.float().to(device)  # aug1 = aug2 : [128, 1, 178]
 
         # forward pass
-        h_time, h_freq, z_time, z_freq, mask_t, mask_f = model(aug1, data_f)
+        h_time, h_freq, z_time, z_freq, mask_t, mask_f, z_time2, z_freq2 = model(aug1, data_f)
 
         """Compute Pre-train loss = Reconstruction loss on time domain + Reconstruction loss on frequency domain + L2 penalty between z_t and z_f + Barlow Twins loss"""
         batch_size = h_time.shape[0]
@@ -235,28 +235,22 @@ def model_pretrain(
 
         l2_penalty = torch.cdist(z_time, z_freq, p=2).mean()
 
-        # add covariance matrix loss from barlow twins
-<<<<<<< HEAD
+        # Barlow Twins loss
+        # first avg pool the projections
+        z_time, z_time2 = z_time.mean(1), z_time2.mean(1)
+        z_freq, z_freq2 = z_freq.mean(1), z_freq2.mean(1) 
 
-        # 1 0 0
-        # 0 1 0
-        # 0 0 1
         batch_size = z_time.shape[0]
-        # both augmentations
-        z1,z2 = torch.cat((z_time[0],z_freq[0]),dim=1), torch.cat((z_freq[1],z_time[1]),dim=1)
+        # joint matrix on diag off diag on both augmentations
+        z1,z2 = torch.cat((z_time,z_freq),dim=1), torch.cat((z_time2,z_freq2),dim=1)
+        
         c = z1.T @ z2 / batch_size 
 
         on_diag = torch.diagonal(c).add_(-1).pow_(2).sum()
         off_diag = off_diagonal(c).pow_(2).sum()
 
-        # joint matrix on diag off diag
-
         cov_loss = on_diag + config.lam_bt * off_diag
         
-=======
-        cov_loss = 0
-
->>>>>>> 9169cd1da33afcd3447e138648ce11e4f0002dec
         # add
         loss = (
             config.lam * (rec_loss_t + rec_loss_f)
