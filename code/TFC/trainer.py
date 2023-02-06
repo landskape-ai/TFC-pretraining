@@ -225,16 +225,18 @@ def model_pretrain(
 
         # forward pass
         h_time, h_freq, z_time, z_freq, mask_t, mask_f = model(aug1, data_f)
-        
-        
+
         """Compute Pre-train loss = Reconstruction loss on time domain + Reconstruction loss on frequency domain + L2 penalty between z_t and z_f + Barlow Twins loss"""
         batch_size = h_time.shape[0]
         rec_loss_t = F.mse_loss(h_time.view(batch_size, -1), aug1.view(batch_size, -1))
-        rec_loss_f = F.mse_loss(h_freq.view(batch_size, -1), data_f.view(batch_size, -1))
-        
+        rec_loss_f = F.mse_loss(
+            h_freq.view(batch_size, -1), data_f.view(batch_size, -1)
+        )
+
         l2_penalty = torch.cdist(z_time, z_freq, p=2).mean()
 
         # add covariance matrix loss from barlow twins
+<<<<<<< HEAD
 
         # 1 0 0
         # 0 1 0
@@ -251,8 +253,16 @@ def model_pretrain(
 
         cov_loss = on_diag + config.lam_bt * off_diag
         
+=======
+        cov_loss = 0
+
+>>>>>>> 9169cd1da33afcd3447e138648ce11e4f0002dec
         # add
-        loss = config.lam * (rec_loss_t + rec_loss_f) - config.alpha * l2_penalty + config.gamma * cov_loss
+        loss = (
+            config.lam * (rec_loss_t + rec_loss_f)
+            - config.alpha * l2_penalty
+            + config.gamma * cov_loss
+        )
 
         total_loss.append(loss.item())
         loss.backward()
